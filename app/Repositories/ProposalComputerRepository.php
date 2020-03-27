@@ -7,46 +7,29 @@ use App\Criteria;
 class ProposalComputerRepository implements ProposalEvaluateInterface
 {
     /**
-     * @var array
-     */
-    protected $keys;
-
-    /**
-     * Create a new instance.
-     *     
-     * @return void
-     */
-    public function __construct()
-    {
-        $this->keys = [
-            'processor', 
-            'ram', 
-            'resolution', 
-            'certificate'
-        ];   
-    }  
-
-    /**
      * Manage proposal evaluation based on criteria.
      *
      * @param  request  $request     
      * @return array
      */
     public function evaluate($request): array
-    {
+    {        
         // Get the request data
         $processor = $request->processor;
         $resolution = $request->resolution;
         $ram = $request->ram;
         $certificate = $request->certificate;
         
+        // Get request key names
+        $keys = $this->requestKeys($request);
+
         // Get product criteria
         $criterion = Criteria::all(); 
 
         $score = 0;
         $product_id = 0;        
         foreach ($criterion as $criteria) {
-            if(in_array($criteria->name, $this->keys)) {  
+            if(in_array($criteria->name, $keys)) {  
                 $value = explode('|', $criteria->value);
                 foreach ($value as $v) {                    
                     if(in_array($v, 
@@ -67,5 +50,23 @@ class ProposalComputerRepository implements ProposalEvaluateInterface
         }        
 
         return [$score, $product_id];    
-    }   
+    }  
+
+    /**
+     * Manage proposal request value names.
+     *
+     * @param  request  $request     
+     * @return array
+     */
+    public function requestKeys($request): array
+    {
+        $keys = [];
+        foreach ($request->except('_token') as $key => $part) {
+            if($key != 'name' && $key != 'price') {
+                $keys[] = $key;
+            }
+        }
+
+        return $keys;
+    } 
 }
